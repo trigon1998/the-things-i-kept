@@ -1,0 +1,49 @@
+---
+import '../styles/global.css';
+import { siteName, href } from '../data/site.js';
+const {title=siteName, description='A personal photographic journal of quiet places, passing light, and things worth remembering.'} = Astro.props;
+const links=[['Stories','/stories/'],['Journal','/journal/'],['Archive','/archive/'],['About','/about/']];
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#F7F7F4" />
+  <meta name="description" content={description} />
+  <link rel="icon" href={href('/favicon.svg')} type="image/svg+xml" />
+  <title>{title === siteName ? title : title + ' — ' + siteName}</title>
+</head>
+<body>
+<header class="site-header">
+  <div class="nav-wrap">
+    <a class="wordmark" href={href('/')}>THE THINGS I KEPT<span class="period">.</span></a>
+    <nav class="desktop-links" aria-label="Primary">{links.map(([label,url]) => <a href={href(url)}>{label}</a>)}</nav>
+    <details class="mobile-menu"><summary aria-label="Open navigation">Menu <span aria-hidden="true">☰</span></summary><nav aria-label="Mobile">{links.map(([label,url]) => <a href={href(url)}>{label}</a>)}</nav></details>
+  </div>
+</header>
+<main><slot /></main>
+<footer class="site-footer"><div><span>THE THINGS I KEPT.</span><p>A personal archive of photographs and passing moments.</p></div><div class="footer-links"><a href={href('/stories/')}>Stories</a><a href={href('/journal/')}>Journal</a><a href={href('/archive/')}>Archive</a></div><small>© {new Date().getFullYear()} · An ongoing collection.</small></footer>
+<dialog id="photo-viewer" aria-label="Photograph viewer"><button class="viewer-close" type="button" aria-label="Close photograph">✕</button><div class="viewer-image"></div><p class="viewer-caption"></p><div class="viewer-controls"><button type="button" data-prev aria-label="Previous photograph">←</button><span class="viewer-count"></span><button type="button" data-next aria-label="Next photograph">→</button></div></dialog>
+<script>
+  let current = 0;
+  const viewer = document.querySelector('#photo-viewer');
+  const targets = [...document.querySelectorAll('[data-viewable]')];
+  const display = viewer?.querySelector('.viewer-image');
+  function show(n) {
+    if (!viewer || !display || !targets.length) return;
+    current = (n + targets.length) % targets.length;
+    const item = targets[current];
+    display.className = 'viewer-image ' + (item.dataset.tone || 'water');
+    viewer.querySelector('.viewer-caption').textContent = item.dataset.caption || 'Photograph placeholder';
+    viewer.querySelector('.viewer-count').textContent = (current + 1) + ' / ' + targets.length;
+  }
+  targets.forEach((item, i) => item.addEventListener('click', () => { show(i); viewer?.showModal(); }));
+  viewer?.querySelector('.viewer-close')?.addEventListener('click', () => viewer.close());
+  viewer?.querySelector('[data-prev]')?.addEventListener('click', () => show(current - 1));
+  viewer?.querySelector('[data-next]')?.addEventListener('click', () => show(current + 1));
+  viewer?.addEventListener('click', e => { if (e.target === viewer) viewer.close(); });
+  viewer?.addEventListener('keydown', e => { if (e.key==='ArrowRight') show(current+1); if(e.key==='ArrowLeft') show(current-1); });
+</script>
+</body>
+</html>

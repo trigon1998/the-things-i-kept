@@ -1,0 +1,37 @@
+---
+import Layout from '../layouts/BaseLayout.astro';
+import {siteName,stories,journal,href} from '../data/site.js';
+export function getStaticPaths() {
+ const slugs=['stories','journal','archive','about',...stories.map(x=>'stories/'+x.slug),...journal.map(x=>'journal/'+x.slug)];
+ return slugs.map(slug=>({params:{slug}}));
+}
+const slug=Astro.params.slug;
+const story=stories.find(s=>slug==='stories/'+s.slug);
+const entry=journal.find(j=>slug==='journal/'+j.slug);
+const isStories=slug==='stories',isJournal=slug==='journal',isArchive=slug==='archive',isAbout=slug==='about';
+const pageTitle=story?.title||entry?.title||(isStories?'Stories':isJournal?'Journal':isArchive?'Archive':'About');
+const tones=['water','mist','dusk','door','shadow','room','light','garden','shade'];
+---
+<Layout title={pageTitle}>
+{story ? <>
+ <div class="container page-heading"><a class="back-link" href={href('/stories/')}>← All stories</a><div class="eyebrow">{story.eyebrow}</div><h1>{story.title}</h1><p>{story.description}</p></div>
+ <div class={'image-block wide feature-photo '+story.tones[0]} data-viewable data-tone={story.tones[0]} data-caption={story.title+' — opening image placeholder'}><span class="photo-label">01 / Photo placeholder</span></div>
+ <div class="container story-flow"><div class="sequence-note"><span>01 / OBSERVATIONS</span><p>Photography is sometimes about what I notice, and sometimes about what I don't want to forget.</p></div><div class="story-grid">{story.tones.slice(1).map((tone,i)=><div class={'image-block aspect-portrait '+tone} data-viewable data-tone={tone} data-caption={story.title+' / frame '+(i+2)}><span class="photo-label">{String(i+2).padStart(2,'0')} / photo placeholder</span></div>)}</div><div class="sequence-note"><p>Some moments are easier to remember than to explain.</p></div><div class={'image-block wide-photo '+story.tones[0]} data-viewable data-tone={story.tones[0]} data-caption={story.title+' / closing image'}><span class="photo-label">Final frame / photo placeholder</span></div><a class="text-link" href={href('/stories/')}>← Back to stories</a></div>
+</> : entry ? <>
+ <div class="container page-heading journal-heading"><a class="back-link" href={href('/journal/')}>← Journal</a><div class="eyebrow">{entry.date.toUpperCase()}</div><h1>{entry.title}</h1><p>{entry.note}</p></div>
+ <div class={'container image-block journal-hero '+entry.tone} data-viewable data-tone={entry.tone} data-caption={entry.title+' — photograph placeholder'}><span class="photo-label">Photo placeholder</span></div>
+ <div class="reading-column"><p>Small moments are often the ones that stay with me. I keep these photographs not to make a statement, but to remember where I was and what I noticed.</p><p>This is sample journal writing. I will replace it with a personal note when the photographs are selected.</p><a class="text-link" href={href('/journal/')}>← All journal entries</a></div>
+</> : isStories ? <>
+ <section class="container page-heading"><div class="eyebrow">CURATED PHOTOGRAPHS</div><h1>Stories</h1><p>Photographs sequenced into small exhibitions. Each collection has its own rhythm, and its own reason for being.</p></section>
+ <section class="container story-grid listing">{stories.map(s=><a class="story-card" href={href('/stories/'+s.slug+'/')}><div class={'image-block aspect-portrait '+s.tones[0]}><span class="photo-label">{s.title} / photo placeholder</span></div><h3>{s.title}</h3><p>{s.eyebrow}</p><small>{s.description}</small></a>)}</section>
+</> : isJournal ? <>
+ <section class="container page-heading"><div class="eyebrow">CHRONICLES OF ORDINARY LIFE</div><h1>Journal</h1><p>Fragments of days, places, conversations, and ordinary light.</p></section>
+ <section class="container journal-list">{journal.map(j=><a class="journal-item" href={href('/journal/'+j.slug+'/')}><div class={'image-block '+j.tone}></div><div><div class="eyebrow">{j.date}</div><h2>{j.title}</h2><p>{j.note}</p><span class="subtle-link">Read entry ↗</span></div></a>)}</section>
+</> : isArchive ? <>
+ <section class="container page-heading"><div class="eyebrow">A GROWING COLLECTION</div><h1>Archive</h1><p>A place to wander through the years, and return to what I once noticed.</p></section>
+ <section class="container archive-section"><div class="archive-toolbar"><span>Browse by year</span><div class="archive-filters"><button class="filter active" data-year="all">All</button><button class="filter" data-year="2026">2026</button><button class="filter" data-year="2025">2025</button></div></div><div class="archive-grid">{tones.map((tone,i)=><button class={'image-block archive-tile '+tone} data-viewable data-tone={tone} data-year={i%3===0?'2025':'2026'} data-caption={'Archive / photograph '+String(i+1).padStart(2,'0')} aria-label={'View photograph '+(i+1)}><span class="photo-label">{String(i+1).padStart(2,'0')} / placeholder</span></button>)}</div></section>
+ <script>const filters=document.querySelectorAll('[data-year].filter');filters.forEach(b=>b.addEventListener('click',()=>{filters.forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.archive-tile').forEach(x=>x.hidden=b.dataset.year!=='all'&&x.dataset.year!==b.dataset.year)}))</script>
+</> : isAbout ? <>
+ <section class="container page-heading about-page"><div class="eyebrow">BEHIND THE CAMERA</div><h1>About this place.</h1><p>I'm someone who likes to keep photographs of people, landscapes, passing light, and the ordinary things that make up a life.</p><div class="about-divider"></div><h2>A personal photographic journal.</h2><p>This is a home for work in progress, memories, experiments, and photographs I continue to find meaning in. A place I can revisit, rearrange, and let grow with me.</p><p>It is not about making every photograph perfect. It is about keeping the ones that matter.</p><a href={href('/stories/')} class="text-link">Explore my stories ↗</a></section>
+</> : null}
+</Layout>
