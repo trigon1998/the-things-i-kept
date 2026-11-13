@@ -1,12 +1,69 @@
 ---
 import Layout from '../layouts/BaseLayout.astro';
-import {stories,journal,href} from '../data/site.js';
+import PhotoFrame from '../components/PhotoFrame.astro';
+import PhotoMedia from '../components/PhotoMedia.astro';
+import { href } from '../data/site.js';
+import siteContent from '../data/site-content.json';
+import { getPhotoCatalog, getPublishedStories, getPublishedJournal, validateContent, photoFrom } from '../lib/content.js';
+
+const [stories, journal, catalog] = await Promise.all([
+  getPublishedStories(), getPublishedJournal(), getPhotoCatalog()
+]);
+validateContent(stories, journal, catalog);
+
+const featured = stories.filter((entry) => entry.data.featured).slice(0, 2);
+const shownStories = featured.length ? featured : stories.slice(0, 2);
+const hero = siteContent.hero.photoId
+  ? photoFrom(catalog, siteContent.hero.photoId, 'homepage hero')
+  : stories.length ? photoFrom(catalog, (featured[0] || stories[0]).data.cover) : null;
+const journalEntry = journal.find((entry) => entry.data.featured) || journal[0];
+const journalPhoto = journalEntry ? photoFrom(catalog, journalEntry.data.photos[0]) : null;
 ---
 <Layout>
-<section class="container hero-intro" data-reveal><div class="eyebrow">A PERSONAL PHOTOGRAPHIC JOURNAL</div><h1>The quiet things<br/><em>I noticed.</em></h1><p>Photographs, places, people, passing light — and the moments I chose to keep.</p></section>
-<button type="button" class="wide image-block hero-image water" data-viewable data-tone="water" data-caption="A quiet morning — photograph placeholder" aria-label="View feature photograph"><span class="photo-label">A quiet morning / photo placeholder</span></button>
-<div class="container image-credit"><span>SELECTED PHOTOGRAPH · 2026</span><span>001 / AN ONGOING COLLECTION</span></div>
-<section class="container section-block" data-reveal><div class="section-top"><div><div class="eyebrow">01 / CURATED PHOTOGRAPHS</div><h2>Selected stories</h2></div><a class="subtle-link" href={href('/stories/')}>Explore all stories <span>↗</span></a></div><div class="story-grid">{stories.slice(0,2).map((s,i)=><a class="story-card" href={href('/stories/'+s.slug+'/')}><div class={'image-block '+s.tones[0]+' aspect-portrait'}><span class="photo-label">{s.title} / photo placeholder</span></div><h3>{s.title}</h3><p>{s.eyebrow}</p></a>)}</div></section>
-<section class="journal-feature" data-reveal><div class="container feature-inner"><div><div class="eyebrow">02 / FROM THE JOURNAL</div><h2>Little things<br/><em>worth remembering.</em></h2><p>Not every photograph needs to be a project. Some simply belong to the day they were made.</p><a class="text-link" href={href('/journal/')}>Read the journal <span>↗</span></a></div><div class="image-block room aspect-square"><span class="photo-label">Everyday / photo placeholder</span></div></div></section>
-<section class="container section-block archive-teaser" data-reveal><div class="eyebrow">03 / LOOK BACK</div><h2>An archive that grows<br/>with time.</h2><p>A place to revisit what I have seen, and perhaps see it differently.</p><a class="text-link" href={href('/archive/')}>Enter the archive <span>↗</span></a></section>
+  <section class="container hero-intro" data-reveal>
+    <div class="eyebrow">{siteContent.hero.eyebrow}</div>
+    <h1>{siteContent.hero.titleLine1}<br/><em>{siteContent.hero.titleLine2}</em></h1>
+    <p>{siteContent.hero.description}</p>
+  </section>
+
+  {hero && <PhotoFrame photo={hero} className="wide hero-image" loading="eager" />}
+  {hero && <div class="container image-credit">
+    <span>SELECTED PHOTOGRAPH · {hero.year}</span>
+    <span>AN ONGOING COLLECTION</span>
+  </div>}
+
+  <section class="container section-block" data-reveal>
+    <div class="section-top"><div><div class="eyebrow">01 / CURATED PHOTOGRAPHS</div><h2>{siteContent.labels.stories}</h2></div>
+      <a class="subtle-link" href={href('/stories/')}>Explore all stories <span>↗</span></a>
+    </div>
+    <div class="story-grid">
+      {shownStories.map((story) => {
+        const cover = photoFrom(catalog, story.data.cover);
+        return <a class="story-card" href={href('/stories/' + story.id + '/')}>
+          <div class={'image-block aspect-portrait ' + cover.tone}><PhotoMedia photo={cover} /></div>
+          <h3>{story.data.title}</h3><p>{story.data.category} / {story.data.period}</p>
+        </a>;
+      })}
+    </div>
+  </section>
+
+  {journalEntry && journalPhoto && <section class="journal-feature" data-reveal>
+    <div class="container feature-inner">
+      <div><div class="eyebrow">02 / FROM THE JOURNAL</div>
+        <h2>{siteContent.labels.journalLine1}<br/><em>{siteContent.labels.journalLine2}</em></h2>
+        <p>{journalEntry.data.description}</p>
+        <a class="text-link" href={href('/journal/' + journalEntry.id + '/')}>Read the journal <span>↗</span></a>
+      </div>
+      <a href={href('/journal/' + journalEntry.id + '/')} class={'image-block aspect-square ' + journalPhoto.tone} aria-label={'Read ' + journalEntry.data.title}>
+        <PhotoMedia photo={journalPhoto} />
+      </a>
+    </div>
+  </section>}
+
+  <section class="container section-block archive-teaser" data-reveal>
+    <div class="eyebrow">03 / LOOK BACK</div>
+    <h2>{siteContent.labels.archiveLine1}<br/>{siteContent.labels.archiveLine2}</h2>
+    <p>{siteContent.labels.archiveDescription}</p>
+    <a class="text-link" href={href('/archive/')}>Enter the archive <span>↗</span></a>
+  </section>
 </Layout>

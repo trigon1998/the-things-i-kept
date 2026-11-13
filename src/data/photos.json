@@ -1,0 +1,83 @@
+[
+  {
+    "id": "water-01",
+    "title": "Quiet water",
+    "alt": "",
+    "tone": "water",
+    "year": 2026,
+    "category": "Landscape",
+    "caption": "Opening photograph — placeholder"
+  },
+  {
+    "id": "mist-01",
+    "title": "Distance and mist",
+    "alt": "",
+    "tone": "mist",
+    "year": 2026,
+    "category": "Landscape"
+  },
+  {
+    "id": "dusk-01",
+    "title": "Fading evening",
+    "alt": "",
+    "tone": "dusk",
+    "year": 2026,
+    "category": "Landscape"
+  },
+  {
+    "id": "door-01",
+    "title": "Through a doorway",
+    "alt": "",
+    "tone": "door",
+    "year": 2025,
+    "category": "Everyday"
+  },
+  {
+    "id": "shadow-01",
+    "title": "Window shadows",
+    "alt": "",
+    "tone": "shadow",
+    "year": 2025,
+    "category": "Abstract"
+  },
+  {
+    "id": "room-01",
+    "title": "A quiet room",
+    "alt": "",
+    "tone": "room",
+    "year": 2025,
+    "category": "Everyday"
+  },
+  {
+    "id": "light-01",
+    "title": "Ordinary light",
+    "alt": "",
+    "tone": "light",
+    "year": 2026,
+    "category": "Abstract"
+  },
+  {
+    "id": "garden-01",
+    "title": "Garden notes",
+    "alt": "",
+    "tone": "garden",
+    "year": 2026,
+    "category": "Everyday"
+  },
+  {
+    "id": "shade-01",
+    "title": "Soft shade",
+    "alt": "",
+    "tone": "shade",
+    "year": 2026,
+    "category": "Abstract"
+  },
+  {
+    "id": "portrait-01",
+    "title": "Human presence",
+    "alt": "",
+    "tone": "mist",
+    "year": 2026,
+    "category": "Portrait"
+  }
+]

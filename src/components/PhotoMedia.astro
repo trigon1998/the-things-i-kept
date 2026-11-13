@@ -1,0 +1,8 @@
+---
+import { href } from '../data/site.js';
+const { photo, loading = 'lazy' } = Astro.props;
+---
+{photo.src
+  ? <img src={href(photo.src)} alt={photo.alt} loading={loading} decoding="async" />
+  : <span class="photo-label" aria-hidden="true">PHOTO PLACEHOLDER · {photo.title}</span>
+}

@@ -1,0 +1,17 @@
+{
+  "hero": {
+    "eyebrow": "A PERSONAL PHOTOGRAPHIC JOURNAL",
+    "titleLine1": "The quiet things",
+    "titleLine2": "I noticed.",
+    "description": "Photographs, places, people, passing light — and the moments I chose to keep.",
+    "photoId": "water-01"
+  },
+  "labels": {
+    "stories": "Selected stories",
+    "journalLine1": "Little things",
+    "journalLine2": "worth remembering.",
+    "archiveLine1": "An archive that grows",
+    "archiveLine2": "with time.",
+    "archiveDescription": "A place to revisit what I have seen, and perhaps see it differently."
+  }
+}
