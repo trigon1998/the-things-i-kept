@@ -1,0 +1,21 @@
+---
+title: "My new story"
+date: 2026-11-13
+period: "2026"
+category: "Landscape"
+description: "A short introduction to this photographic series."
+cover: water-01
+featured: false
+order: 10
+draft: true
+sequence:
+  - type: photo
+    id: water-01
+    size: wide
+  - type: note
+    text: "A small thought between photographs."
+  - type: pair
+    ids: [mist-01, dusk-01]
+---
+
+Write your introduction in **Markdown** here. You can change the extension to `.mdx` later if you need interactive layout components.

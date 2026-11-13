@@ -1,52 +1,35 @@
 # The Things I Kept.
 
-A quiet, photographer-first website for stories, journal entries and an evolving archive.
+A personal photographic archive, built with Astro 7, content collections and GitHub Pages.
 
-**Stack:** Astro 7 · Static HTML · GitHub Pages · Node 24 · no backend/database.
+**Status:** A complete static publishing foundation, currently using **visual photo placeholders** until the author's own exports are uploaded.
 
-## Current GitHub version
+**Live site:** https://trigon1998.github.io/the-things-i-kept/
 
-This repository contains a **deployable, compact V1 scaffold** generated directly in ChatGPT with the refreshed GitHub connection. It is **not byte-for-byte identical** to the earlier 48-file `the-things-i-kept-astro-v1.zip` shared in the conversation and committed locally on the Mac. The GitHub copy contains the key pages and interactions in a simpler file structure.
+## Publish without editing layouts
 
-The site currently uses **illustrative CSS color fields as photo placeholders**. No photograph is presented as the author's actual image. Replace these before public launch.
+Read the step-by-step **[Content Guide](docs/CONTENT_GUIDE.md)**. You can manage your content with GitHub's website:
 
-## GitHub Pages
+| Task | Edit |
+| --- | --- |
+| Upload photo | `public/photos/` |
+| Register photo and metadata | `src/data/photos.json` |
+| Add/edit a Story | `src/content/stories/*.md` or `*.mdx` |
+| Add/edit a Journal | `src/content/journal/*.md` or `*.mdx` |
+| Homepage hero text and photo | `src/data/site-content.json` |
+| About page | `src/content/pages/about.md` |
 
-1. Go to **Settings → Pages** on this repository.
-2. Under **Build and deployment → Source**, select **GitHub Actions**.
-3. Go to **Actions → Deploy Astro to GitHub Pages** and select **Run workflow** (or rerun the previously failed deployment).
-4. After the deploy job succeeds, open: https://trigon1998.github.io/the-things-i-kept/
+The homepage and Archive automatically reflect published content. Story sequencing supports single images, pairs, and text pauses. `draft: true` excludes an entry from public pages, but does not make committed files private.
 
-The Astro build was verified as successful through GitHub Actions on November 11, 2026. The initial deployment could not complete because GitHub Pages was not yet enabled.
+## Developer setup
 
-## Develop locally
+- Node.js 24
+- `npm install`
+- `npm run dev`
+- `npm run build`
 
-Requires **Node.js 24**.
+This is a fully static build: no database, no server process, no CMS login. Deploy runs from `.github/workflows/deploy.yml` when the `main` branch changes. In GitHub repository Settings → Pages, choose **GitHub Actions**.
 
-```bash
-git clone https://github.com/trigon1998/the-things-i-kept.git
-cd the-things-i-kept
-npm install
-npm run dev
-```
+**Be careful:** The earlier 48-file local ZIP and the GitHub repository have different Git histories. The GitHub repository is the canonical live source. Do not force-push the older ZIP over it.
 
-Open http://localhost:4321/the-things-i-kept/
-
-To check production output: `npm run build`.
-
-## Where to edit content
-
-- `src/data/site.js` — Story names, Journal entries, and navigation links.
-- `src/pages/index.astro` — Homepage layout.
-- `src/pages/[...slug].astro` — Stories, Journal, Archive, and About layouts.
-- `src/styles/global.css` — Quiet Editorial styling.
-- `src/layouts/BaseLayout.astro` — Shared navigation, footer, and photo viewer.
-- `.github/workflows/deploy.yml` — GitHub Pages deployment.
-
-## If you already committed the earlier ZIP on your Mac
-
-**Do not run `git push --force` or `git pull --rebase` blindly.** The local first commit and the GitHub-generated first commit have unrelated histories and different file structures.
-
-Use a separate folder to clone the GitHub repository and inspect it. If you want to switch back to the larger original source, compare the two versions and migrate the desired files into a new branch or a pull request. Do not overwrite the website without reviewing the diff.
-
-All other repositories under `trigon1998` were left untouched.
+No other repositories have been modified.

@@ -1,0 +1,28 @@
+---
+import PhotoFrame from './PhotoFrame.astro';
+import { photoFrom } from '../lib/content.js';
+
+const { sequence, catalog } = Astro.props;
+---
+<section class="container story-sequence" aria-label="Photographic sequence">
+  {sequence.map((block) => (
+    block.type === 'photo' ? (
+      <div class={'sequence-photo sequence-' + block.size} data-reveal>
+        <PhotoFrame
+          photo={photoFrom(catalog, block.id)}
+          className={block.size === 'portrait' ? 'aspect-portrait' : block.size === 'wide' ? 'wide-photo' : 'sequence-framed-photo'}
+        />
+      </div>
+    ) : block.type === 'pair' ? (
+      <div class="story-grid sequence-pair" data-reveal>
+        {block.ids.map((id) => (
+          <div class="sequence-photo">
+            <PhotoFrame photo={photoFrom(catalog, id)} className="aspect-portrait" />
+          </div>
+        ))}
+      </div>
+    ) : (
+      <blockquote class="sequence-note" data-reveal><p>{block.text}</p></blockquote>
+    )
+  ))}
+</section>

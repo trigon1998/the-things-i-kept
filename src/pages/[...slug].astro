@@ -1,38 +1,167 @@
 ---
 import Layout from '../layouts/BaseLayout.astro';
 import PhotoFrame from '../components/PhotoFrame.astro';
-import {siteName,stories,journal,href} from '../data/site.js';
-export function getStaticPaths() {
- const slugs=['stories','journal','archive','about',...stories.map(x=>'stories/'+x.slug),...journal.map(x=>'journal/'+x.slug)];
- return slugs.map(slug=>({params:{slug}}));
+import PhotoMedia from '../components/PhotoMedia.astro';
+import StorySequence from '../components/StorySequence.astro';
+import { render, getEntry } from 'astro:content';
+import { href } from '../data/site.js';
+import {
+  dateLabel, getPhotoCatalog, getPublishedStories, getPublishedJournal,
+  photoFrom, validateContent, visiblePhotoIds
+} from '../lib/content.js';
+
+export async function getStaticPaths() {
+  const [stories, journal] = await Promise.all([getPublishedStories(), getPublishedJournal()]);
+  return [
+    ...['stories', 'journal', 'archive', 'about'].map((slug) => ({ params: { slug } })),
+    ...stories.map((entry) => ({ params: { slug: 'stories/' + entry.id }, props: { storyEntry: entry } })),
+    ...journal.map((entry) => ({ params: { slug: 'journal/' + entry.id }, props: { journalEntry: entry } })),
+  ];
 }
-const slug=Astro.params.slug;
-const story=stories.find(s=>slug==='stories/'+s.slug);
-const entry=journal.find(j=>slug==='journal/'+j.slug);
-const isStories=slug==='stories',isJournal=slug==='journal',isArchive=slug==='archive',isAbout=slug==='about';
-const pageTitle=story?.title||entry?.title||(isStories?'Stories':isJournal?'Journal':isArchive?'Archive':'About');
-const tones=['water','mist','dusk','door','shadow','room','light','garden','shade'];
+
+const { storyEntry, journalEntry } = Astro.props;
+const slug = Astro.params.slug;
+const isStories = slug === 'stories';
+const isJournal = slug === 'journal';
+const isArchive = slug === 'archive';
+const isAbout = slug === 'about';
+
+const [stories, journal, catalog] = await Promise.all([
+  getPublishedStories(), getPublishedJournal(), getPhotoCatalog()
+]);
+validateContent(stories, journal, catalog);
+
+const entry = storyEntry || journalEntry;
+const rendered = entry ? await render(entry) : null;
+const Content = rendered?.Content;
+const aboutPage = isAbout ? await getEntry('pages', 'about') : null;
+const aboutRendered = aboutPage ? await render(aboutPage) : null;
+const AboutContent = aboutRendered?.Content;
+
+const pageTitle =
+  storyEntry?.data.title || journalEntry?.data.title ||
+  (isStories ? 'Stories' : isJournal ? 'Journal' : isArchive ? 'Archive' : 'About');
+
+const archive = visiblePhotoIds(stories, journal)
+  .map((id) => photoFrom(catalog, id, 'archive'))
+  .sort((a, b) => b.year - a.year || a.id.localeCompare(b.id));
+const years = [...new Set(archive.map((photo) => photo.year))].sort((a, b) => b - a);
+const categories = [...new Set(archive.map((photo) => photo.category))].sort();
+const storyCover = (story) => photoFrom(catalog, story.data.cover);
+const journalCover = (entry) => photoFrom(catalog, entry.data.photos[0]);
 ---
 <Layout title={pageTitle}>
-{story ? <>
- <div class="container page-heading"><a class="back-link" href={href('/stories/')}>← All stories</a><div class="eyebrow">{story.eyebrow}</div><h1>{story.title}</h1><p>{story.description}</p></div>
- <PhotoFrame tone={story.tones[0]} className="wide feature-photo" caption={story.title+' — opening image placeholder'} label="01 / Photo placeholder" />
- <div class="container story-flow"><div class="sequence-note"><span>01 / OBSERVATIONS</span><p>Photography is sometimes about what I notice, and sometimes about what I don't want to forget.</p></div><div class="story-grid">{story.tones.slice(1).map((tone,i)=><PhotoFrame tone={tone} className="aspect-portrait" caption={story.title+' / frame '+(i+2)} label={String(i+2).padStart(2,'0')+' / photo placeholder'} />)}</div><div class="sequence-note"><p>Some moments are easier to remember than to explain.</p></div><PhotoFrame tone={story.tones[0]} className="wide-photo" caption={story.title+' / closing image'} label="Final frame / photo placeholder" /><a class="text-link" href={href('/stories/')}>← Back to stories</a></div>
-</> : entry ? <>
- <div class="container page-heading journal-heading"><a class="back-link" href={href('/journal/')}>← Journal</a><div class="eyebrow">{entry.date.toUpperCase()}</div><h1>{entry.title}</h1><p>{entry.note}</p></div>
- <PhotoFrame tone={entry.tone} className="container journal-hero" caption={entry.title+' — photograph placeholder'} label="Photo placeholder" />
- <div class="reading-column"><p>Small moments are often the ones that stay with me. I keep these photographs not to make a statement, but to remember where I was and what I noticed.</p><p>This is sample journal writing. I will replace it with a personal note when the photographs are selected.</p><a class="text-link" href={href('/journal/')}>← All journal entries</a></div>
-</> : isStories ? <>
- <section class="container page-heading"><div class="eyebrow">CURATED PHOTOGRAPHS</div><h1>Stories</h1><p>Photographs sequenced into small exhibitions. Each collection has its own rhythm, and its own reason for being.</p></section>
- <section class="container story-grid listing">{stories.map(s=><a class="story-card" href={href('/stories/'+s.slug+'/')}><div class={'image-block aspect-portrait '+s.tones[0]}><span class="photo-label">{s.title} / photo placeholder</span></div><h3>{s.title}</h3><p>{s.eyebrow}</p><small>{s.description}</small></a>)}</section>
-</> : isJournal ? <>
- <section class="container page-heading"><div class="eyebrow">CHRONICLES OF ORDINARY LIFE</div><h1>Journal</h1><p>Fragments of days, places, conversations, and ordinary light.</p></section>
- <section class="container journal-list">{journal.map(j=><a class="journal-item" href={href('/journal/'+j.slug+'/')}><div class={'image-block '+j.tone}></div><div><div class="eyebrow">{j.date}</div><h2>{j.title}</h2><p>{j.note}</p><span class="subtle-link">Read entry ↗</span></div></a>)}</section>
-</> : isArchive ? <>
- <section class="container page-heading"><div class="eyebrow">A GROWING COLLECTION</div><h1>Archive</h1><p>A place to wander through the years, and return to what I once noticed.</p></section>
- <section class="container archive-section"><div class="archive-toolbar"><span>Browse by year</span><div class="archive-filters"><button class="filter active" data-year="all">All</button><button class="filter" data-year="2026">2026</button><button class="filter" data-year="2025">2025</button></div></div><div class="archive-grid">{tones.map((tone,i)=><PhotoFrame tone={tone} className="archive-tile" year={i%3===0?'2025':'2026'} caption={'Archive / photograph '+String(i+1).padStart(2,'0')} label={String(i+1).padStart(2,'0')+' / placeholder'} />)}</div></section>
- <script>const filters=document.querySelectorAll('[data-year].filter');filters.forEach(b=>b.addEventListener('click',()=>{filters.forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.archive-tile').forEach(x=>x.hidden=b.dataset.year!=='all'&&x.dataset.year!==b.dataset.year)}))</script>
-</> : isAbout ? <>
- <section class="container page-heading about-page"><div class="eyebrow">BEHIND THE CAMERA</div><h1>About this place.</h1><p>I'm someone who likes to keep photographs of people, landscapes, passing light, and the ordinary things that make up a life.</p><div class="about-divider"></div><h2>A personal photographic journal.</h2><p>This is a home for work in progress, memories, experiments, and photographs I continue to find meaning in. A place I can revisit, rearrange, and let grow with me.</p><p>It is not about making every photograph perfect. It is about keeping the ones that matter.</p><a href={href('/stories/')} class="text-link">Explore my stories ↗</a></section>
-</> : null}
+  {storyEntry ? <>
+    <div class="container page-heading">
+      <a class="back-link" href={href('/stories/')}>← All stories</a>
+      <div class="eyebrow">{storyEntry.data.category} · {storyEntry.data.period}</div>
+      <h1>{storyEntry.data.title}</h1>
+      <p>{storyEntry.data.description}</p>
+    </div>
+    {Content && <div class="container story-prose prose"><Content /></div>}
+    <StorySequence sequence={storyEntry.data.sequence} catalog={catalog} />
+    <div class="container sequence-end"><a class="text-link" href={href('/stories/')}>← Back to stories</a></div>
+  </> : journalEntry ? <>
+    <div class="container page-heading journal-heading">
+      <a class="back-link" href={href('/journal/')}>← Journal</a>
+      <div class="eyebrow">{dateLabel(journalEntry.data.date).toUpperCase()}</div>
+      <h1>{journalEntry.data.title}</h1>
+      <p>{journalEntry.data.description}</p>
+    </div>
+    <PhotoFrame photo={journalCover(journalEntry)} className="container journal-hero" loading="eager" />
+    {Content && <article class="reading-column prose"><Content /></article>}
+    {journalEntry.data.photos.length > 1 && <div class="container journal-photo-grid">
+      {journalEntry.data.photos.slice(1).map((id) => <PhotoFrame photo={photoFrom(catalog, id)} className="aspect-portrait" />)}
+    </div>}
+    <div class="container sequence-end"><a class="text-link" href={href('/journal/')}>← All journal entries</a></div>
+  </> : isStories ? <>
+    <section class="container page-heading">
+      <div class="eyebrow">CURATED PHOTOGRAPHS</div><h1>Stories</h1>
+      <p>Photographs sequenced into small exhibitions. Each collection has its own rhythm, and its own reason for being.</p>
+    </section>
+    <section class="container story-grid listing">
+      {stories.map((story) => <a class="story-card" href={href('/stories/' + story.id + '/')}>
+        <div class={'image-block aspect-portrait ' + storyCover(story).tone}><PhotoMedia photo={storyCover(story)} /></div>
+        <h3>{story.data.title}</h3>
+        <p>{story.data.category} · {story.data.period}</p>
+        <small>{story.data.description}</small>
+      </a>)}
+    </section>
+  </> : isJournal ? <>
+    <section class="container page-heading">
+      <div class="eyebrow">CHRONICLES OF ORDINARY LIFE</div><h1>Journal</h1>
+      <p>Fragments of days, places, conversations, and ordinary light.</p>
+    </section>
+    <section class="container journal-list">
+      {journal.map((entry) => <a class="journal-item" href={href('/journal/' + entry.id + '/')}>
+        <div class={'image-block ' + journalCover(entry).tone}><PhotoMedia photo={journalCover(entry)} /></div>
+        <div><div class="eyebrow">{dateLabel(entry.data.date)}</div>
+          <h2>{entry.data.title}</h2>
+          <p>{entry.data.description}</p>
+          <span class="subtle-link">Read entry ↗</span>
+        </div>
+      </a>)}
+    </section>
+  </> : isArchive ? <>
+    <section class="container page-heading">
+      <div class="eyebrow">A GROWING COLLECTION</div><h1>Archive</h1>
+      <p>A place to wander through the years, and return to what I once noticed.</p>
+    </section>
+    <section class="container archive-section">
+      <div class="archive-toolbar">
+        <div class="archive-filter-group" aria-label="Filter by year">
+          <span>Year</span>
+          <div class="archive-filters">
+            <button type="button" class="filter active" data-filter-type="year" data-value="all" aria-pressed="true">All</button>
+            {years.map((year) => <button type="button" class="filter" data-filter-type="year" data-value={year} aria-pressed="false">{year}</button>)}
+          </div>
+        </div>
+        <div class="archive-filter-group" aria-label="Filter by category">
+          <span>Subject</span>
+          <div class="archive-filters">
+            <button type="button" class="filter active" data-filter-type="category" data-value="all" aria-pressed="true">All</button>
+            {categories.map((category) => <button type="button" class="filter" data-filter-type="category" data-value={category.toLowerCase()} aria-pressed="false">{category}</button>)}
+          </div>
+        </div>
+      </div>
+      <p class="archive-result" data-archive-result>{archive.length} photographs</p>
+      <div class="archive-grid">
+        {archive.map((photo) => <PhotoFrame photo={photo} className="archive-tile" />)}
+      </div>
+    </section>
+    <script>
+      const state = { year: 'all', category: 'all' };
+      const controls = document.querySelectorAll('[data-filter-type].filter');
+      const items = document.querySelectorAll('.archive-tile');
+      const result = document.querySelector('[data-archive-result]');
+      controls.forEach((button) => button.addEventListener('click', () => {
+        const kind = button.dataset.filterType;
+        state[kind] = button.dataset.value;
+        controls.forEach((control) => {
+          const selected = control.dataset.value === state[control.dataset.filterType] &&
+            control.dataset.filterType === kind;
+          if (control.dataset.filterType === kind) {
+            control.classList.toggle('active', selected);
+            control.setAttribute('aria-pressed', String(selected));
+          }
+        });
+        let visible = 0;
+        items.forEach((item) => {
+          const shown = (state.year === 'all' || item.dataset.year === state.year) &&
+            (state.category === 'all' || item.dataset.category === state.category);
+          item.hidden = !shown;
+          if (shown) visible++;
+        });
+        if (result) result.textContent = visible + (visible === 1 ? ' photograph' : ' photographs');
+      }));
+    </script>
+  </> : isAbout ? <>
+    <section class="container page-heading about-page">
+      <div class="eyebrow">{aboutPage?.data.eyebrow || 'BEHIND THE CAMERA'}</div>
+      <h1>{aboutPage?.data.title || 'About this place.'}</h1>
+      <p>{aboutPage?.data.description}</p>
+      <div class="about-divider"></div>
+      {AboutContent && <article class="prose about-prose"><AboutContent /></article>}
+    </section>
+  </> : null}
 </Layout>

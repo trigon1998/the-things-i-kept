@@ -1,33 +1,21 @@
 ---
-/**
- * PhotoFrame is the editable bridge between the current placeholders
- * and future real photographs. Pass src (with the GitHub Pages base path)
- * to display an actual image without changing the Photo Viewer.
- */
-const {
-  tone = 'mist',
-  className = '',
-  caption = '',
-  label = 'Photograph placeholder',
-  year,
-  src,
-  alt = '',
-  loading = 'lazy'
-} = Astro.props;
+import { href } from '../data/site.js';
+import PhotoMedia from './PhotoMedia.astro';
+
+const { photo, className = '', loading = 'lazy' } = Astro.props;
+const fullSrc = photo.src ? href(photo.src) : undefined;
+const caption = photo.caption || photo.title;
 ---
 <button
   type="button"
-  class={'image-block photo-trigger ' + tone + ' ' + className}
+  class={'image-block photo-trigger ' + photo.tone + ' ' + className}
   data-viewable
-  data-tone={tone}
+  data-tone={photo.tone}
+  data-photo-src={fullSrc}
   data-caption={caption}
-  data-photo-src={src}
-  data-year={year}
-  aria-label={'View photograph: ' + (caption || alt || label)}
+  data-year={photo.year}
+  data-category={photo.category.toLowerCase()}
+  aria-label={'View photograph: ' + (caption || photo.alt || photo.id)}
 >
-  {src ? (
-    <img src={src} alt={alt} loading={loading} decoding="async" />
-  ) : (
-    <span class="photo-label" aria-hidden="true">{label}</span>
-  )}
+  <PhotoMedia photo={photo} loading={loading} />
 </button>
