@@ -1,0 +1,188 @@
+<dialog id="photo-viewer" class="viewer-dialog" aria-labelledby="viewer-heading">
+  <div class="viewer-shell">
+    <header class="viewer-topbar">
+      <div class="viewer-brand">
+        <span id="viewer-heading">THE THINGS I KEPT.</span>
+        <span class="viewer-small">Photographic archive</span>
+      </div>
+      <div class="viewer-tools">
+        <button type="button" class="viewer-tool" data-viewer-info aria-expanded="false" aria-controls="viewer-details" aria-label="Show photograph information" title="Photograph information">
+          <span aria-hidden="true">ⓘ</span>
+        </button>
+        <button type="button" class="viewer-tool" data-viewer-zoom aria-pressed="false" aria-label="Zoom photograph" title="Zoom photograph">
+          <span aria-hidden="true">＋</span>
+        </button>
+        <button type="button" class="viewer-tool viewer-close" data-viewer-close aria-label="Close viewer" title="Close viewer">
+          <span aria-hidden="true">✕</span>
+        </button>
+      </div>
+    </header>
+    <div class="viewer-stage" data-viewer-stage>
+      <button type="button" class="viewer-arrow viewer-prev" data-viewer-prev aria-label="Previous photograph">←</button>
+      <div class="viewer-canvas" data-viewer-canvas></div>
+      <button type="button" class="viewer-arrow viewer-next" data-viewer-next aria-label="Next photograph">→</button>
+    </div>
+    <footer class="viewer-bottom">
+      <div id="viewer-details" class="viewer-details" hidden>
+        <p class="viewer-details-title" data-viewer-caption></p>
+        <p class="viewer-details-note" data-viewer-note></p>
+      </div>
+      <div class="viewer-bottom-row">
+        <span class="viewer-hint">← → to navigate · Esc to close</span>
+        <span class="viewer-counter" data-viewer-count aria-live="polite">01 / 01</span>
+      </div>
+    </footer>
+  </div>
+</dialog>
+
+<script>
+  const dialog = document.getElementById('photo-viewer');
+  if (dialog instanceof HTMLDialogElement) {
+    const canvas = dialog.querySelector('[data-viewer-canvas]');
+    const stage = dialog.querySelector('[data-viewer-stage]');
+    const closeButton = dialog.querySelector('[data-viewer-close]');
+    const prevButton = dialog.querySelector('[data-viewer-prev]');
+    const nextButton = dialog.querySelector('[data-viewer-next]');
+    const infoButton = dialog.querySelector('[data-viewer-info]');
+    const zoomButton = dialog.querySelector('[data-viewer-zoom]');
+    const details = dialog.querySelector('#viewer-details');
+    const caption = dialog.querySelector('[data-viewer-caption]');
+    const note = dialog.querySelector('[data-viewer-note]');
+    const count = dialog.querySelector('[data-viewer-count]');
+    let activeTriggers = [];
+    let current = 0;
+    let lastFocus = null;
+    let isZoomed = false;
+    let isInfoVisible = false;
+    let startPoint = null;
+
+    const availablePhotos = () => Array.from(document.querySelectorAll('[data-viewable]')).filter((el) =>
+      !el.hidden && !el.closest('[hidden]') && !el.closest('[aria-hidden="true"]')
+    );
+    const currentTrigger = () => activeTriggers[current] || null;
+    const currentSource = (trigger) => {
+      if (!trigger) return '';
+      const source = trigger.getAttribute('data-photo-src');
+      const nestedImage = trigger.querySelector('img');
+      return source || (nestedImage ? (nestedImage.currentSrc || nestedImage.src) : '');
+    };
+
+    function setZoom(value) {
+      const trigger = currentTrigger();
+      const zoomable = Boolean(currentSource(trigger));
+      isZoomed = Boolean(value && zoomable);
+      canvas?.classList.toggle('is-zoomed', isZoomed);
+      zoomButton?.setAttribute('aria-pressed', String(isZoomed));
+      zoomButton?.setAttribute('aria-label', isZoomed ? 'Zoom out' : 'Zoom photograph');
+      if (stage) stage.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }
+
+    function renderPhoto() {
+      const trigger = currentTrigger();
+      if (!trigger || !canvas) return;
+      const source = currentSource(trigger);
+      const tone = trigger.getAttribute('data-tone') || 'mist';
+      const title = trigger.getAttribute('data-caption') || 'Untitled photograph';
+      setZoom(false);
+      canvas.replaceChildren();
+      if (source) {
+        const image = document.createElement('img');
+        image.src = source;
+        image.alt = trigger.querySelector('img')?.alt || title;
+        image.decoding = 'async';
+        image.className = 'viewer-real-image';
+        canvas.append(image);
+      } else {
+        const placeholder = document.createElement('div');
+        const allowed = ['water','mist','dusk','door','shadow','room','light','garden','shade'];
+        placeholder.className = 'viewer-placeholder ' + (allowed.includes(tone) ? tone : 'mist');
+        const label = document.createElement('span');
+        label.textContent = 'PHOTO PLACEHOLDER';
+        placeholder.append(label);
+        canvas.append(placeholder);
+      }
+      if (caption) caption.textContent = title;
+      if (note) note.textContent = source ? 'Photograph from the personal archive' : 'Add the original photo to display it here.';
+      if (count) count.textContent = String(current + 1).padStart(2, '0') + ' / ' + String(activeTriggers.length).padStart(2, '0');
+      if (zoomButton) zoomButton.disabled = !source;
+      const onlyOne = activeTriggers.length <= 1;
+      if (prevButton) prevButton.hidden = onlyOne;
+      if (nextButton) nextButton.hidden = onlyOne;
+    }
+    function show(index) {
+      if (!activeTriggers.length) return;
+      current = (index + activeTriggers.length) % activeTriggers.length;
+      renderPhoto();
+    }
+    function open(trigger) {
+      activeTriggers = availablePhotos();
+      current = activeTriggers.indexOf(trigger);
+      if (current < 0) return;
+      lastFocus = document.activeElement;
+      isInfoVisible = false;
+      if (details) details.hidden = true;
+      infoButton?.setAttribute('aria-expanded', 'false');
+      renderPhoto();
+      dialog.showModal();
+      document.body.classList.add('viewer-open');
+      closeButton?.focus();
+    }
+    function close() {
+      dialog.close();
+    }
+    function toggleInfo() {
+      isInfoVisible = !isInfoVisible;
+      if (details) details.hidden = !isInfoVisible;
+      infoButton?.setAttribute('aria-expanded', String(isInfoVisible));
+    }
+
+    document.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const trigger = target.closest('[data-viewable]');
+      if (trigger && !dialog.open) open(trigger);
+    });
+
+    // Support any legacy non-button image triggers; new PhotoFrame uses native buttons.
+    document.addEventListener('keydown', (event) => {
+      if (dialog.open) {
+        if (event.key === 'ArrowLeft') { event.preventDefault(); show(current - 1); }
+        if (event.key === 'ArrowRight') { event.preventDefault(); show(current + 1); }
+        return;
+      }
+      const target = event.target;
+      if (target instanceof HTMLElement && target.matches('[data-viewable]:not(button)') && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault();
+        open(target);
+      }
+    });
+
+    closeButton?.addEventListener('click', close);
+    prevButton?.addEventListener('click', () => show(current - 1));
+    nextButton?.addEventListener('click', () => show(current + 1));
+    infoButton?.addEventListener('click', toggleInfo);
+    zoomButton?.addEventListener('click', () => setZoom(!isZoomed));
+    canvas?.addEventListener('click', () => {
+      if (currentSource(currentTrigger())) setZoom(!isZoomed);
+    });
+    dialog.addEventListener('click', (event) => {
+      // Click the dark margin outside the image / controls to dismiss.
+      if (event.target === dialog) close();
+    });
+    dialog.addEventListener('close', () => {
+      document.body.classList.remove('viewer-open');
+      setZoom(false);
+      if (lastFocus instanceof HTMLElement) lastFocus.focus({ preventScroll: true });
+    });
+    stage?.addEventListener('touchstart', (event) => {
+      if (event.touches.length === 1) startPoint = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    }, { passive: true });
+    stage?.addEventListener('touchend', (event) => {
+      if (!startPoint || isZoomed || event.changedTouches.length !== 1) { startPoint = null; return; }
+      const dx = event.changedTouches[0].clientX - startPoint.x;
+      const dy = event.changedTouches[0].clientY - startPoint.y;
+      startPoint = null;
+      if (Math.abs(dx) > 58 && Math.abs(dx) > Math.abs(dy) * 1.4) show(current + (dx < 0 ? 1 : -1));
+    }, { passive: true });
+  }
+</script>
