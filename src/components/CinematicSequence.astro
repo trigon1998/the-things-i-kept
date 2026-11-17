@@ -1,0 +1,127 @@
+---
+import PhotoMedia from './PhotoMedia.astro';
+import { href } from '../data/site.js';
+
+const { scenes = [] } = Astro.props;
+---
+<section class="cinema-runway" id="cinematic-journey" data-cinema aria-label="Photographic journey">
+  <div class="cinema-sticky" data-cinema-sticky>
+    <div class="cinema-frame" data-cinema-frame>
+      {scenes.map((scene, index) => (
+        <article
+          class={'cinema-scene' + (index === 0 ? ' is-active' : '')}
+          data-cinema-scene
+          data-index={index}
+        >
+          <div class={'cinema-scene-art ' + scene.photo.tone}>
+            <PhotoMedia photo={scene.photo} loading={index === 0 ? 'eager' : 'lazy'} />
+          </div>
+          <div class="cinema-scene-shade" aria-hidden="true"></div>
+          <div class="cinema-scene-content">
+            <span class="cinema-chapter-label">{scene.eyebrow}</span>
+            <h2>{scene.title}</h2>
+            <p>{scene.description}</p>
+            <a class="cinema-scene-link" href={href(scene.link)}>
+              {scene.linkLabel} <span aria-hidden="true">↗</span>
+            </a>
+          </div>
+        </article>
+      ))}
+      <div class="cinema-stage-ui" aria-hidden="true">
+        <span class="cinema-stage-caption">THE THINGS I KEPT. / FIELD NOTES</span>
+        <div class="cinema-stage-count">
+          <span data-cinema-current>01</span><span class="cinema-stage-slash">/</span>
+          <span>{String(scenes.length).padStart(2, '0')}</span>
+        </div>
+      </div>
+      <div class="cinema-stage-progress" aria-hidden="true">
+        <span data-cinema-progress></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const runway = document.querySelector('[data-cinema]');
+  if (runway) {
+    const sticky = runway.querySelector('[data-cinema-sticky]');
+    const frame = runway.querySelector('[data-cinema-frame]');
+    const scenes = [...runway.querySelectorAll('[data-cinema-scene]')];
+    const counter = runway.querySelector('[data-cinema-current]');
+    const progressBar = runway.querySelector('[data-cinema-progress]');
+    const mobile = window.matchMedia('(max-width: 760px)');
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const clamp = (n, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, n));
+    let ticking = false;
+    let enabled = false;
+    let previousActive = -1;
+
+    function setStaticMode() {
+      runway.classList.remove('is-cinematic');
+      frame?.style.removeProperty('--cinema-scale');
+      frame?.style.removeProperty('--cinema-radius');
+      scenes.forEach((scene) => {
+        scene.style.removeProperty('--scene-alpha');
+        scene.style.removeProperty('--scene-lift');
+        scene.classList.add('is-active');
+        scene.removeAttribute('inert');
+        scene.removeAttribute('aria-hidden');
+      });
+      previousActive = -1;
+    }
+
+    function renderScroll() {
+      ticking = false;
+      if (!enabled || !frame || !sticky || scenes.length === 0) return;
+      const bounds = runway.getBoundingClientRect();
+      const headerHeight = document.getElementById('site-header')?.offsetHeight || 74;
+      const distance = Math.max(1, runway.offsetHeight - sticky.offsetHeight);
+      const progress = clamp((headerHeight - bounds.top) / distance);
+      const open = clamp(progress / .19);
+      const softened = open * open * (3 - 2 * open);
+      frame.style.setProperty('--cinema-scale', (0.88 + 0.12 * softened).toFixed(4));
+      frame.style.setProperty('--cinema-radius', (25 * (1 - softened)).toFixed(1) + 'px');
+
+      const position = progress * Math.max(0, scenes.length - 1);
+      const active = Math.min(scenes.length - 1, Math.round(position));
+      scenes.forEach((scene, index) => {
+        const distanceToScene = Math.abs(position - index);
+        const alpha = clamp(1 - distanceToScene * 1.65);
+        scene.style.setProperty('--scene-alpha', alpha.toFixed(3));
+        scene.style.setProperty('--scene-lift', ((index - position) * 20).toFixed(1) + 'px');
+        scene.classList.toggle('is-active', active === index);
+        scene.inert = active !== index;
+        scene.setAttribute('aria-hidden', String(active !== index));
+      });
+
+      if (previousActive !== active) {
+        previousActive = active;
+        if (counter) counter.textContent = String(active + 1).padStart(2, '0');
+      }
+      if (progressBar) progressBar.style.transform = 'scaleX(' + progress.toFixed(4) + ')';
+    }
+
+    function requestRender() {
+      if (!ticking) {
+        ticking = true;
+        window.requestAnimationFrame(renderScroll);
+      }
+    }
+
+    function updateMode() {
+      enabled = !mobile.matches && !reduced.matches && scenes.length > 1;
+      if (enabled) {
+        runway.classList.add('is-cinematic');
+        requestRender();
+      } else {
+        setStaticMode();
+      }
+    }
+
+    mobile.addEventListener?.('change', updateMode);
+    reduced.addEventListener?.('change', updateMode);
+    window.addEventListener('resize', requestRender, { passive: true });
+    window.addEventListener('scroll', requestRender, { passive: true });
+    updateMode();
+  }
+</script>

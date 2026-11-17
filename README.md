@@ -4,7 +4,7 @@ A personal photographic archive, built with Astro 7, content collections and Git
 
 **Status:** A complete static publishing foundation, currently using **visual photo placeholders** until the author's own exports are uploaded.
 
-**Live site:** https://trigon1998.github.io/the-things-i-kept/
+**Cinematic V2 Homepage:** The introductory scroll journey is edited in [`src/data/site-content.json`](src/data/site-content.json). See the [Cinematic Home Guide](docs/CINEMATIC_HOME.md). The experience is progressive: mobile and reduced-motion layouts show readable, unpinned chapters.\n\n**Live site:** https://trigon1998.github.io/the-things-i-kept/
 
 ## Publish without editing layouts
 
