@@ -3,8 +3,35 @@
     "eyebrow": "A PERSONAL PHOTOGRAPHIC JOURNAL",
     "titleLine1": "The quiet things",
     "titleLine2": "I noticed.",
-    "description": "Photographs, places, people, passing light — and the moments I chose to keep.",
-    "photoId": "water-01"
+    "description": "Photographs, places, people, passing light — and the moments I chose to keep."
+  },
+  "cinema": {
+    "chapters": [
+      {
+        "photoId": "water-01",
+        "eyebrow": "01 / DISTANCE",
+        "title": "Where everything slows.",
+        "description": "Weather, water, and the quiet distance between here and somewhere else.",
+        "link": "/stories/mists-and-water/",
+        "linkLabel": "Mists & Water"
+      },
+      {
+        "photoId": "door-01",
+        "eyebrow": "02 / IN-BETWEEN",
+        "title": "A different way of seeing.",
+        "description": "Windows, doorways, and the ordinary frames that change the way a place feels.",
+        "link": "/stories/thresholds/",
+        "linkLabel": "Thresholds"
+      },
+      {
+        "photoId": "light-01",
+        "eyebrow": "03 / THE ORDINARY",
+        "title": "Light makes its own stories.",
+        "description": "A small collection of shapes, shadows, and moments that stayed with me.",
+        "link": "/stories/ordinary-light/",
+        "linkLabel": "Ordinary Light"
+      }
+    ]
   },
   "labels": {
     "stories": "Selected stories",
@@ -13,5 +40,10 @@
     "archiveLine1": "An archive that grows",
     "archiveLine2": "with time.",
     "archiveDescription": "A place to revisit what I have seen, and perhaps see it differently."
+  },
+  "interlude": {
+    "eyebrow": "A PERSONAL NOTE",
+    "line1": "Not everything I photograph is remarkable.",
+    "line2": "Some things simply deserve to be remembered."
   }
 }
